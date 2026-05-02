@@ -1,0 +1,31 @@
+{
+  "economy": [],
+  "bank_accounts": [
+    {
+      "guildId": "1498056046453850333",
+      "userId": "422493437372268560",
+      "balance": 0,
+      "createdAt": "2026-05-01T14:54:46.992Z"
+    }
+  ],
+  "bank_transactions": [],
+  "licenses": [],
+  "parish_roles": [],
+  "votes": [],
+  "vote_responses": [],
+  "raid_config": [
+    {
+      "guildId": "1498056046453850333",
+      "enabled": 1,
+      "action": "mute",
+      "mentionThreshold": 5,
+      "joinThreshold": 4,
+      "messageThreshold": 6,
+      "intervalSeconds": 10,
+      "logsChannelId": null
+    }
+  ],
+  "ticket_panels": [],
+  "tickets": [],
+  "guild_settings": []
+}
