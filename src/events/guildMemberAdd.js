@@ -1,8 +1,11 @@
-const raidProtect = require('../services/raidProtect');
+const securityService = require('../services/securityService');
+const welcomeService  = require('../services/welcomeService');
 
 module.exports = {
   name: 'guildMemberAdd',
-  async execute(member) {
-    await raidProtect.checkJoin(member);
+  async execute(client, member) {
+    await securityService.checkJoin(member);
+    await welcomeService.sendWelcome(member);
+    await welcomeService.assignAutorole(member);
   }
 };

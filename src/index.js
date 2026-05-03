@@ -5,10 +5,13 @@ const { token, clientId, guildId } = require('./config');
 const db = require('./services/db');
 const logger = require('./services/logger');
 
+// GuildMembers + MessageContent are privileged intents — enable them in the Discord Developer Portal
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
 });
@@ -42,11 +45,8 @@ async function deployCommands() {
       return;
     }
 
-    // Enregistrement global des commandes (prend jusqu'à 1 heure pour se propager)
-    await rest.put(Routes.applicationCommands(clientId), {
-      body: client.commandArray
-    });
-    logger.info('Commandes enregistrées globalement.');
+    await rest.put(Routes.applicationCommands(clientId), { body: client.commandArray });
+    logger.info(`${client.commandArray.length} commandes enregistrées globalement.`);
   } catch (error) {
     logger.error('Erreur lors de l’enregistrement des commandes :', error);
   }

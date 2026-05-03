@@ -1,8 +1,8 @@
-const raidProtect = require('../services/raidProtect');
+const securityService = require('../services/securityService');
 
 module.exports = {
   name: 'messageCreate',
-  async execute(message) {
-    await raidProtect.checkMessage(message);
+  async execute(client, message) {
+    await securityService.checkMessage(message);
   }
 };

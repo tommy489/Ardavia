@@ -10,7 +10,9 @@ const defaultData = {
   parish_roles: [],
   votes: [],
   vote_responses: [],
-  raid_config: [],
+  laws: [],
+  security_config: [],
+  welcome_config: [],
   ticket_panels: [],
   tickets: [],
   guild_settings: []
