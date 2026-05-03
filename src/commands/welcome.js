@@ -2,61 +2,54 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 const welcomeService = require('../services/welcomeService');
 
 const COLOR  = 0x2ecc71;
-const FOOTER = 'Ardavia Council • Bienvenue';
+const FOOTER = 'Ardavia Council • Welcome';
 
 function parseColor(hex) {
   if (!hex) return COLOR;
-  const cleaned = hex.replace('#', '');
-  const parsed  = parseInt(cleaned, 16);
+  const parsed = parseInt(hex.replace('#', ''), 16);
   return isNaN(parsed) ? COLOR : parsed;
 }
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('welcome')
-    .setDescription('Système de bienvenue du serveur Ardavia')
+    .setDescription('Server welcome system')
 
     .addSubcommand(sub => sub
       .setName('setup')
-      .setDescription('Configure le message de bienvenue')
+      .setDescription('Configure the welcome message')
       .addChannelOption(o => o
         .setName('channel')
-        .setDescription('Salon où envoyer le message de bienvenue')
+        .setDescription('Channel to send the welcome message in')
         .setRequired(true)
         .addChannelTypes(ChannelType.GuildText)
       )
-      .addStringOption(o => o.setName('title').setDescription('Titre du message (variable : {server})').setRequired(true))
+      .addStringOption(o => o.setName('title').setDescription('Message title (variable: {server})').setRequired(true))
       .addStringOption(o => o
         .setName('description')
-        .setDescription('Corps du message (variables : {user} {username} {server} {memberCount})')
+        .setDescription('Message body (variables: {user} {username} {server} {memberCount})')
         .setRequired(true)
       )
-      .addStringOption(o => o.setName('color').setDescription('Couleur HEX (ex: #2ecc71)'))
-      .addStringOption(o => o.setName('image').setDescription('URL de l\'image de bannière'))
+      .addStringOption(o => o.setName('color').setDescription('HEX colour (e.g. #2ecc71)'))
+      .addStringOption(o => o.setName('image').setDescription('Banner image URL'))
     )
-
     .addSubcommand(sub => sub
       .setName('disable')
-      .setDescription('Désactive les messages de bienvenue')
+      .setDescription('Disable welcome messages')
     )
-
     .addSubcommand(sub => sub
       .setName('preview')
-      .setDescription('Affiche un aperçu du message de bienvenue')
+      .setDescription('Preview the current welcome message')
     )
-
     .addSubcommand(sub => sub
       .setName('autorole')
-      .setDescription('Configure le rôle automatiquement attribué à l\'arrivée')
-      .addRoleOption(o => o.setName('role').setDescription('Rôle à attribuer').setRequired(true))
+      .setDescription('Set the role automatically assigned to new members')
+      .addRoleOption(o => o.setName('role').setDescription('Role to assign').setRequired(true))
     ),
 
   async execute(interaction) {
     if (!interaction.member.permissions.has('ManageGuild')) {
-      return interaction.reply({
-        content: '⛔ Permission requise : **Gérer le serveur**.',
-        ephemeral: true
-      });
+      return interaction.reply({ content: '⛔ Permission required: **Manage Server**.', ephemeral: true });
     }
 
     const sub = interaction.options.getSubcommand();
@@ -74,28 +67,28 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle('👋  Bienvenue configuré')
+        .setTitle('👋  Welcome System Configured')
         .addFields(
-          { name: '📢 Salon',       value: channel.toString(),    inline: true },
-          { name: '🎨 Couleur',     value: `#${color.toString(16).padStart(6, '0')}`, inline: true },
-          { name: '🖼️ Image',      value: imageUrl ? '✅ Définie' : '❌ Aucune',       inline: true },
-          { name: '📋 Titre',       value: title,                 inline: false },
-          { name: '📝 Description', value: description,           inline: false }
+          { name: '📢 Channel',     value: channel.toString(), inline: true },
+          { name: '🎨 Colour',      value: `#${color.toString(16).padStart(6, '0')}`, inline: true },
+          { name: '🖼️ Image',      value: imageUrl ? '✅ Set' : '❌ None', inline: true },
+          { name: '📋 Title',       value: title,       inline: false },
+          { name: '📝 Description', value: description, inline: false }
         )
-        .setFooter({ text: `${FOOTER} • Utilisez /welcome preview pour prévisualiser` })
+        .setFooter({ text: `${FOOTER} • Use /welcome preview to preview` })
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed] });
     }
 
-    // ── Disable ──────────────────────────────────────────────────────────────
+    // ── Disable ───────────────────────────────────────────────────────────────
     if (sub === 'disable') {
       welcomeService.disable(guild.id);
 
       const embed = new EmbedBuilder()
         .setColor(0x95a5a6)
-        .setTitle('👋  Messages de bienvenue désactivés')
-        .setDescription('Aucun message ne sera envoyé lors des prochaines arrivées.')
+        .setTitle('👋  Welcome Messages Disabled')
+        .setDescription('No message will be sent when members join.')
         .setFooter({ text: FOOTER })
         .setTimestamp();
 
@@ -106,10 +99,7 @@ module.exports = {
     if (sub === 'preview') {
       const cfg = welcomeService.getConfig(guild.id);
       if (!cfg) {
-        return interaction.reply({
-          content: '⚠️ Aucune configuration trouvée. Utilisez `/welcome setup` d\'abord.',
-          ephemeral: true
-        });
+        return interaction.reply({ content: '⚠️ No configuration found. Use `/welcome setup` first.', ephemeral: true });
       }
 
       const fakeMember = Object.assign(Object.create(Object.getPrototypeOf(member)), member, {
@@ -121,15 +111,15 @@ module.exports = {
       return interaction.reply({ embeds: [preview], ephemeral: true });
     }
 
-    // ── Autorole ─────────────────────────────────────────────────────────────
+    // ── Autorole ──────────────────────────────────────────────────────────────
     if (sub === 'autorole') {
       const role = interaction.options.getRole('role');
       welcomeService.setConfig(guild.id, { autoroleId: role.id });
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle('👋  Autorole configuré')
-        .setDescription(`Le rôle ${role} sera automatiquement attribué à chaque nouveau membre.`)
+        .setTitle('👋  Auto-Role Configured')
+        .setDescription(`${role} will be automatically assigned to every new member.`)
         .setFooter({ text: FOOTER })
         .setTimestamp();
 

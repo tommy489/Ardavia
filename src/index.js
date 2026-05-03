@@ -38,20 +38,20 @@ async function deployCommands() {
     const rest = new REST({ version: '10' }).setToken(token);
 
     if (!clientId) {
-      logger.warn('CLIENT_ID manquant, enregistrement des commandes impossible.');
+      logger.warn('CLIENT_ID missing, cannot register commands.');
       return;
     }
 
     await rest.put(Routes.applicationCommands(clientId), { body: client.commandArray });
     logger.info(`${client.commandArray.length} commandes enregistrées globalement.`);
   } catch (error) {
-    logger.error('Erreur lors de l’enregistrement des commandes :', error);
+    logger.error(‘Failed to register commands:’, error);
   }
 }
 
 client.once('ready', async () => {
-  logger.info(`Connecté en tant que ${client.user.tag}`);
+  logger.info(`Logged in as ${client.user.tag}`);
   await deployCommands();
 });
 
-client.login(token).catch(error => logger.error('Impossible de se connecter au bot :', error));
+client.login(token).catch(error => logger.error('Failed to connect:', error));

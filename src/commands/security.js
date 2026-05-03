@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
 const securityService = require('../services/securityService');
 
-const COLOR   = 0xe74c3c;
-const FOOTER  = 'Ardavia Council • Sécurité';
+const COLOR  = 0xe74c3c;
+const FOOTER = 'Ardavia Council • Security';
 
 const PROTECTION_LABELS = {
   antispam:    '🔁 Anti-Spam',
@@ -14,131 +14,127 @@ const PROTECTION_LABELS = {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('security')
-    .setDescription('Système de sécurité du serveur Ardavia')
+    .setDescription('Server security system')
 
     .addSubcommand(sub => sub
       .setName('enable')
-      .setDescription('Active le système de sécurité')
+      .setDescription('Enable the security system')
     )
-
     .addSubcommand(sub => sub
       .setName('disable')
-      .setDescription('Désactive entièrement le système de sécurité')
+      .setDescription('Disable the security system entirely')
     )
-
     .addSubcommand(sub => sub
       .setName('status')
-      .setDescription('Affiche la configuration complète de la sécurité')
+      .setDescription('Display the full security configuration')
     )
-
     .addSubcommand(sub => sub
       .setName('config')
-      .setDescription('Configure une protection spécifique')
+      .setDescription('Configure a specific protection')
       .addStringOption(o => o
         .setName('protection')
-        .setDescription('Protection à configurer')
+        .setDescription('Protection to configure')
         .setRequired(true)
         .addChoices(
-          { name: '🔁 Anti-Spam',          value: 'antispam'    },
-          { name: '🚨 Anti-Raid',           value: 'antiraid'    },
-          { name: '📢 Anti Mass-Mention',   value: 'antimention' },
-          { name: '🤖 Anti-Bot',            value: 'antibot'     }
+          { name: '🔁 Anti-Spam',        value: 'antispam'    },
+          { name: '🚨 Anti-Raid',         value: 'antiraid'    },
+          { name: '📢 Anti Mass-Mention', value: 'antimention' },
+          { name: '🤖 Anti-Bot',          value: 'antibot'     }
         )
       )
       .addStringOption(o => o
         .setName('status')
-        .setDescription('Activer ou désactiver cette protection')
+        .setDescription('Enable or disable this protection')
         .addChoices(
-          { name: '✅ Activer',    value: 'on'  },
-          { name: '❌ Désactiver', value: 'off' }
+          { name: '✅ Enable',  value: 'on'  },
+          { name: '❌ Disable', value: 'off' }
         )
       )
       .addStringOption(o => o
         .setName('action')
-        .setDescription('Action appliquée lors d\'un déclenchement')
+        .setDescription('Action applied when triggered')
         .addChoices(
-          { name: '⚠️ Avertissement (warn)',  value: 'warn' },
-          { name: '🔇 Mute (10 min)',          value: 'mute' },
-          { name: '👢 Expulsion (kick)',        value: 'kick' },
-          { name: '🔨 Bannissement (ban)',      value: 'ban'  }
+          { name: '⚠️ Warning (warn)',  value: 'warn' },
+          { name: '🔇 Mute (10 min)',   value: 'mute' },
+          { name: '👢 Kick',            value: 'kick' },
+          { name: '🔨 Ban',             value: 'ban'  }
         )
       )
-      .addIntegerOption(o => o.setName('threshold').setDescription('Seuil de déclenchement').setMinValue(1).setMaxValue(100))
-      .addIntegerOption(o => o.setName('interval').setDescription('Intervalle de détection en secondes').setMinValue(1).setMaxValue(120))
+      .addIntegerOption(o => o.setName('threshold').setDescription('Trigger threshold').setMinValue(1).setMaxValue(100))
+      .addIntegerOption(o => o.setName('interval').setDescription('Detection interval in seconds').setMinValue(1).setMaxValue(120))
     )
-
     .addSubcommand(sub => sub
       .setName('logs')
-      .setDescription('Définit le salon de réception des logs de sécurité')
+      .setDescription('Set the security log channel')
       .addChannelOption(o => o
         .setName('channel')
-        .setDescription('Salon de logs')
+        .setDescription('Log channel')
         .setRequired(true)
         .addChannelTypes(ChannelType.GuildText)
       )
     )
-
     .addSubcommand(sub => sub
       .setName('whitelist-role')
-      .setDescription('Gère les rôles immunisés contre les détections automatiques')
-      .addRoleOption(o => o.setName('role').setDescription('Rôle concerné').setRequired(true))
+      .setDescription('Manage roles exempt from automatic detections')
+      .addRoleOption(o => o.setName('role').setDescription('Role').setRequired(true))
       .addStringOption(o => o
         .setName('action')
-        .setDescription('Ajouter ou retirer de la liste blanche')
+        .setDescription('Add or remove from whitelist')
         .setRequired(true)
         .addChoices(
-          { name: '➕ Ajouter',  value: 'add'    },
-          { name: '➖ Retirer',  value: 'remove' }
+          { name: '➕ Add',    value: 'add'    },
+          { name: '➖ Remove', value: 'remove' }
         )
       )
     ),
 
   async execute(interaction) {
     if (!interaction.member.permissions.has('ManageGuild')) {
-      return interaction.reply({
-        content: '⛔ Permission requise : **Gérer le serveur**.',
-        ephemeral: true
-      });
+      return interaction.reply({ content: '⛔ Permission required: **Manage Server**.', ephemeral: true });
     }
 
-    const sub  = interaction.options.getSubcommand();
+    const sub = interaction.options.getSubcommand();
     const { guild } = interaction;
 
-    // ── Enable / Disable ────────────────────────────────────────────────────
+    // ── Enable / Disable ─────────────────────────────────────────────────────
     if (sub === 'enable' || sub === 'disable') {
       const on = sub === 'enable';
       securityService.setConfig(guild.id, { enabled: on });
 
       const embed = new EmbedBuilder()
         .setColor(on ? 0x2ecc71 : 0x95a5a6)
-        .setTitle(`🛡️  Sécurité ${on ? 'Activée' : 'Désactivée'}`)
+        .setTitle(`🛡️  Security ${on ? 'Enabled' : 'Disabled'}`)
         .setDescription(on
-          ? 'Le système de sécurité est désormais **actif**.\nToutes les protections configurées sont en service.'
-          : 'Le système de sécurité est **désactivé**.\nAucune protection n\'est en service.')
+          ? 'The security system is now **active**. All configured protections are running.'
+          : 'The security system is **disabled**. No protections are running.')
         .setFooter({ text: FOOTER })
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed] });
     }
 
-    // ── Status ───────────────────────────────────────────────────────────────
+    // ── Status ────────────────────────────────────────────────────────────────
     if (sub === 'status') {
-      const cfg = securityService.getConfig(guild.id);
-      const bool = (v) => v ? '✅ Actif' : '❌ Inactif';
+      const cfg  = securityService.getConfig(guild.id);
+      const bool = v => v ? '✅ Active' : '❌ Inactive';
       const whitelistRoles = Array.isArray(cfg.whitelist_roles) && cfg.whitelist_roles.length
         ? cfg.whitelist_roles.map(id => `<@&${id}>`).join(', ')
-        : 'Aucun';
+        : 'None';
 
       const embed = new EmbedBuilder()
         .setColor(cfg.enabled ? COLOR : 0x95a5a6)
-        .setTitle('🛡️  Configuration de Sécurité — Ardavia')
-        .setDescription(`**Système global :** ${cfg.enabled ? '✅ Actif' : '❌ Inactif'}\n**Intervalle :** ${cfg.intervalSeconds}s\n**Logs :** ${cfg.logsChannelId ? `<#${cfg.logsChannelId}>` : 'Non configuré'}`)
+        .setTitle('🛡️  Security Configuration — Ardavia')
+        .setDescription(
+          `**System:** ${cfg.enabled ? '✅ Active' : '❌ Inactive'}\n` +
+          `**Interval:** ${cfg.intervalSeconds}s\n` +
+          `**Logs:** ${cfg.logsChannelId ? `<#${cfg.logsChannelId}>` : 'Not configured'}`
+        )
         .addFields(
-          { name: PROTECTION_LABELS.antispam,    value: `${bool(cfg.antispam_enabled)}\nSeuil : ${cfg.antispam_threshold} msg → \`${cfg.antispam_action}\``,       inline: true },
-          { name: PROTECTION_LABELS.antiraid,    value: `${bool(cfg.antiraid_enabled)}\nSeuil : ${cfg.antiraid_threshold} join → \`${cfg.antiraid_action}\``,      inline: true },
-          { name: PROTECTION_LABELS.antimention, value: `${bool(cfg.antimention_enabled)}\nSeuil : ${cfg.antimention_threshold} mentions → \`${cfg.antimention_action}\``, inline: true },
-          { name: PROTECTION_LABELS.antibot,     value: `${bool(cfg.antibot_enabled)}\nAction : \`${cfg.antibot_action}\``,                                          inline: true },
-          { name: '🤍 Rôles exemptés', value: whitelistRoles, inline: false }
+          { name: PROTECTION_LABELS.antispam,    value: `${bool(cfg.antispam_enabled)}\nThreshold: ${cfg.antispam_threshold} msg → \`${cfg.antispam_action}\``,       inline: true },
+          { name: PROTECTION_LABELS.antiraid,    value: `${bool(cfg.antiraid_enabled)}\nThreshold: ${cfg.antiraid_threshold} joins → \`${cfg.antiraid_action}\``,     inline: true },
+          { name: PROTECTION_LABELS.antimention, value: `${bool(cfg.antimention_enabled)}\nThreshold: ${cfg.antimention_threshold} mentions → \`${cfg.antimention_action}\``, inline: true },
+          { name: PROTECTION_LABELS.antibot,     value: `${bool(cfg.antibot_enabled)}\nAction: \`${cfg.antibot_action}\``,                                             inline: true },
+          { name: '🤍 Whitelisted Roles',        value: whitelistRoles, inline: false }
         )
         .setFooter({ text: FOOTER })
         .setTimestamp();
@@ -146,7 +142,7 @@ module.exports = {
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    // ── Config ───────────────────────────────────────────────────────────────
+    // ── Config ────────────────────────────────────────────────────────────────
     if (sub === 'config') {
       const protection = interaction.options.getString('protection');
       const status     = interaction.options.getString('status');
@@ -161,7 +157,7 @@ module.exports = {
       if (interval  !== null) updates.intervalSeconds            = interval;
 
       if (!Object.keys(updates).length) {
-        return interaction.reply({ content: '⚠️ Aucune modification fournie.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ No changes provided.', ephemeral: true });
       }
 
       securityService.setConfig(guild.id, updates);
@@ -169,12 +165,12 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle(`🛡️  ${PROTECTION_LABELS[protection]} — Configuration mise à jour`)
+        .setTitle(`🛡️  ${PROTECTION_LABELS[protection]} — Configuration Updated`)
         .addFields(
-          { name: '🔘 Statut',    value: cfg[`${protection}_enabled`] ? '✅ Actif' : '❌ Inactif',                              inline: true },
-          { name: '⚡ Action',    value: `\`${cfg[`${protection}_action`] ?? 'N/A'}\``,                                          inline: true },
-          ...(protection !== 'antibot' ? [{ name: '📊 Seuil', value: String(cfg[`${protection}_threshold`] ?? 'N/A'), inline: true }] : []),
-          { name: '⏱️ Intervalle', value: `${cfg.intervalSeconds}s`,                                                              inline: true }
+          { name: '🔘 Status',    value: cfg[`${protection}_enabled`] ? '✅ Active' : '❌ Inactive', inline: true },
+          { name: '⚡ Action',    value: `\`${cfg[`${protection}_action`] ?? 'N/A'}\``,               inline: true },
+          ...(protection !== 'antibot' ? [{ name: '📊 Threshold', value: String(cfg[`${protection}_threshold`] ?? 'N/A'), inline: true }] : []),
+          { name: '⏱️ Interval', value: `${cfg.intervalSeconds}s`, inline: true }
         )
         .setFooter({ text: FOOTER })
         .setTimestamp();
@@ -182,22 +178,22 @@ module.exports = {
       return interaction.reply({ embeds: [embed] });
     }
 
-    // ── Logs ─────────────────────────────────────────────────────────────────
+    // ── Logs ──────────────────────────────────────────────────────────────────
     if (sub === 'logs') {
       const channel = interaction.options.getChannel('channel');
       securityService.setConfig(guild.id, { logsChannelId: channel.id });
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle('🛡️  Canal de Logs configuré')
-        .setDescription(`Les alertes de sécurité seront envoyées dans ${channel}.`)
+        .setTitle('🛡️  Log Channel Set')
+        .setDescription(`Security alerts will now be sent to ${channel}.`)
         .setFooter({ text: FOOTER })
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed] });
     }
 
-    // ── Whitelist-role ───────────────────────────────────────────────────────
+    // ── Whitelist-role ────────────────────────────────────────────────────────
     if (sub === 'whitelist-role') {
       const role   = interaction.options.getRole('role');
       const action = interaction.options.getString('action');
@@ -210,8 +206,8 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle('🛡️  Liste Blanche mise à jour')
-        .setDescription(`Le rôle ${role} a été **${action === 'add' ? 'ajouté à' : 'retiré de'}** la liste blanche.\nCe rôle est ${action === 'add' ? 'désormais immunisé' : 'à nouveau soumis'} aux détections automatiques.`)
+        .setTitle('🛡️  Whitelist Updated')
+        .setDescription(`${role} has been **${action === 'add' ? 'added to' : 'removed from'}** the security whitelist.`)
         .setFooter({ text: FOOTER })
         .setTimestamp();
 

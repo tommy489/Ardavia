@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix: remove MessageContent privileged intent \\(not required\\) *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: remove GuildMembers intent to allow startup without privileged intents *)",
+      "Bash(git commit -m 'feat: translate entire bot to English *)"
+    ]
+  }
+}

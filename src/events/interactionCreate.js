@@ -15,7 +15,7 @@ module.exports = {
         await command.execute(interaction, client);
       } catch (error) {
         client.logger.error('Command error:', error);
-        const msg = { content: '⚠️ Une erreur est survenue lors de l\'exécution de la commande.', ephemeral: true };
+        const msg = { content: '⚠️ An error occurred while executing this command.', ephemeral: true };
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp(msg).catch(() => {});
         } else {
@@ -33,31 +33,31 @@ module.exports = {
 
     // ── Vote buttons ─────────────────────────────────────────────────────────
     if (action === 'vote' && (target === 'yes' || target === 'no')) {
-      const voteId = parseInt(parts[2], 10);
-      const vote   = voteService.getOpenVote(voteId);
+      const voteId  = parseInt(parts[2], 10);
+      const vote    = voteService.getOpenVote(voteId);
 
       if (!vote) {
-        return interaction.reply({ content: '⛔ Ce vote est fermé ou introuvable.', ephemeral: true });
+        return interaction.reply({ content: '⛔ This vote is closed or not found.', ephemeral: true });
       }
 
       voteService.castVote(vote.id, interaction.user.id, target);
       const results = voteService.getResults(vote.id);
 
-      const label   = target === 'yes' ? '✅ **POUR**' : '❌ **CONTRE**';
-      const yesP    = results.total > 0 ? ((results.yes / results.total) * 100).toFixed(1) : '0.0';
-      const noP     = results.total > 0 ? ((results.no  / results.total) * 100).toFixed(1) : '0.0';
+      const label  = target === 'yes' ? '✅ **IN FAVOUR**' : '❌ **AGAINST**';
+      const yesP   = results.total > 0 ? ((results.yes / results.total) * 100).toFixed(1) : '0.0';
+      const noP    = results.total > 0 ? ((results.no  / results.total) * 100).toFixed(1) : '0.0';
 
       return interaction.reply({
         embeds: [new EmbedBuilder()
           .setColor(target === 'yes' ? 0x2ecc71 : 0xe74c3c)
-          .setTitle('🗳️  Vote enregistré')
-          .setDescription(`Vous avez voté ${label}.`)
+          .setTitle('🗳️  Vote Recorded')
+          .setDescription(`You voted ${label}.`)
           .addFields(
-            { name: '✅ Pour',   value: `${results.yes} (${yesP}%)`,  inline: true },
-            { name: '❌ Contre', value: `${results.no} (${noP}%)`,    inline: true },
-            { name: '👥 Total',  value: String(results.total),         inline: true }
+            { name: '✅ In favour', value: `${results.yes} (${yesP}%)`, inline: true },
+            { name: '❌ Against',   value: `${results.no} (${noP}%)`,   inline: true },
+            { name: '👥 Total',     value: String(results.total),        inline: true }
           )
-          .setFooter({ text: 'Ardavia Council • Gouvernement' })
+          .setFooter({ text: 'Ardavia Council • Government' })
           .setTimestamp()
         ],
         ephemeral: true
@@ -67,57 +67,60 @@ module.exports = {
     // ── Ticket buttons ───────────────────────────────────────────────────────
     if (action === 'ticket') {
 
-      // Create ticket (category from button)
+      // Create ticket
       if (target === 'create') {
         const category = parts[2] || 'support';
         const panel    = ticketService.getPanel(interaction.guild.id);
 
         if (!panel) {
-          return interaction.reply({ content: '⚠️ Le système de tickets n\'est pas configuré.', ephemeral: true });
+          return interaction.reply({ content: '⚠️ The ticket system is not configured.', ephemeral: true });
         }
 
-        // One open ticket per user (check by name prefix)
         const existing = interaction.guild.channels.cache.find(c =>
           c.name.startsWith(`ticket-${interaction.user.username.toLowerCase()}`) && c.type === ChannelType.GuildText
         );
         if (existing) {
-          return interaction.reply({ content: `⚠️ Vous avez déjà un ticket ouvert : ${existing}`, ephemeral: true });
+          return interaction.reply({ content: `⚠️ You already have an open ticket: ${existing}`, ephemeral: true });
         }
 
         const meta    = ticketService.getCategoryMeta(category);
         const channel = await interaction.guild.channels.create({
           name: `ticket-${interaction.user.username.toLowerCase()}-${category}`,
           type: ChannelType.GuildText,
-          topic: `Ticket ${meta.label} — ${interaction.user.tag}`,
+          topic: `${meta.label} ticket — ${interaction.user.tag}`,
           permissionOverwrites: [
             { id: interaction.guild.roles.everyone.id, deny: ['ViewChannel'] },
-            { id: interaction.user.id,  allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] },
-            { id: panel.staffRoleId,    allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageMessages'] }
+            { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] },
+            { id: panel.staffRoleId,   allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageMessages'] }
           ]
         });
 
         ticketService.createTicket(interaction.guild.id, interaction.user.id, channel.id, category);
 
-        await interaction.reply({ content: `✅ Ticket créé : ${channel}`, ephemeral: true });
+        await interaction.reply({ content: `✅ Ticket created: ${channel}`, ephemeral: true });
 
         const ticketEmbed = new EmbedBuilder()
           .setColor(meta.color)
           .setTitle(`🎫  ${meta.label}`)
-          .setDescription('Un membre du staff va vous assister sous peu.\nDécrivez votre demande ci-dessous.')
+          .setDescription('A staff member will assist you shortly.\nDescribe your request below.')
           .addFields(
-            { name: '👤 Ouvert par', value: interaction.user.toString(), inline: true },
-            { name: '📂 Catégorie',  value: meta.label,                  inline: true },
-            { name: '🕐 Créé le',    value: `<t:${Math.floor(Date.now() / 1000)}:f>`, inline: true }
+            { name: '👤 Opened by', value: interaction.user.toString(), inline: true },
+            { name: '📂 Category',  value: meta.label,                  inline: true },
+            { name: '🕐 Created',   value: `<t:${Math.floor(Date.now() / 1000)}:f>`, inline: true }
           )
           .setFooter({ text: 'Ardavia Council • Tickets' })
           .setTimestamp();
 
         const ticketRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId('ticket:close').setLabel('🔒 Fermer le ticket').setStyle(ButtonStyle.Danger),
-          new ButtonBuilder().setCustomId('ticket:claim').setLabel('✋ Prendre en charge').setStyle(ButtonStyle.Secondary)
+          new ButtonBuilder().setCustomId('ticket:close').setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger),
+          new ButtonBuilder().setCustomId('ticket:claim').setLabel('✋ Claim ticket').setStyle(ButtonStyle.Secondary)
         );
 
-        const msg = await channel.send({ content: `<@${interaction.user.id}> <@&${panel.staffRoleId}>`, embeds: [ticketEmbed], components: [ticketRow] });
+        const msg = await channel.send({
+          content: `<@${interaction.user.id}> <@&${panel.staffRoleId}>`,
+          embeds: [ticketEmbed],
+          components: [ticketRow]
+        });
         ticketService.setOpenMessage(interaction.guild.id, channel.id, msg.id);
         return;
       }
@@ -126,13 +129,13 @@ module.exports = {
       if (target === 'close') {
         const ticket = ticketService.getByChannel(interaction.guild.id, interaction.channel.id);
         if (!ticket || ticket.status === 'closed') {
-          return interaction.reply({ content: '⚠️ Ce salon n\'est pas un ticket actif.', ephemeral: true });
+          return interaction.reply({ content: '⚠️ This channel is not an active ticket.', ephemeral: true });
         }
 
-        const isStaff   = interaction.member.permissions.has('ManageChannels');
-        const isOwner   = interaction.user.id === ticket.userId;
+        const isStaff = interaction.member.permissions.has('ManageChannels');
+        const isOwner = interaction.user.id === ticket.userId;
         if (!isStaff && !isOwner) {
-          return interaction.reply({ content: '⛔ Seul le créateur ou un membre du staff peut fermer ce ticket.', ephemeral: true });
+          return interaction.reply({ content: '⛔ Only the ticket creator or staff can close this ticket.', ephemeral: true });
         }
 
         ticketService.closeTicket(interaction.guild.id, interaction.channel.id);
@@ -146,12 +149,12 @@ module.exports = {
             await logCh.send({
               embeds: [new EmbedBuilder()
                 .setColor(0x95a5a6)
-                .setTitle('🎫  Ticket Clôturé')
+                .setTitle('🎫  Ticket Closed')
                 .addFields(
-                  { name: '📂 Catégorie',  value: meta.label,                    inline: true },
-                  { name: '👤 Ouvert par', value: `<@${ticket.userId}>`,          inline: true },
-                  { name: '🔒 Fermé par',  value: interaction.user.toString(),     inline: true },
-                  { name: '🕐 Créé le',    value: `<t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:f>`, inline: false }
+                  { name: '📂 Category',  value: meta.label,                     inline: true },
+                  { name: '👤 Opened by', value: `<@${ticket.userId}>`,           inline: true },
+                  { name: '🔒 Closed by', value: interaction.user.toString(),      inline: true },
+                  { name: '🕐 Created',   value: `<t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:f>`, inline: false }
                 )
                 .setFooter({ text: 'Ardavia Council • Tickets' })
                 .setTimestamp()
@@ -163,8 +166,8 @@ module.exports = {
         await interaction.reply({
           embeds: [new EmbedBuilder()
             .setColor(0xe74c3c)
-            .setTitle('🔒  Ticket Fermé')
-            .setDescription(`Ce ticket a été fermé par ${interaction.user}.\nLe salon sera supprimé dans **5 secondes**.`)
+            .setTitle('🔒  Ticket Closed')
+            .setDescription(`This ticket was closed by ${interaction.user}.\nThe channel will be deleted in **5 seconds**.`)
             .setFooter({ text: 'Ardavia Council • Tickets' })
             .setTimestamp()
           ]
@@ -178,21 +181,20 @@ module.exports = {
       if (target === 'claim') {
         const ticket = ticketService.getByChannel(interaction.guild.id, interaction.channel.id);
         if (!ticket || ticket.status === 'closed') {
-          return interaction.reply({ content: '⚠️ Ce salon n\'est pas un ticket actif.', ephemeral: true });
+          return interaction.reply({ content: '⚠️ This channel is not an active ticket.', ephemeral: true });
         }
         if (ticket.claimedBy) {
-          return interaction.reply({ content: `⚠️ Ce ticket est déjà pris en charge par <@${ticket.claimedBy}>.`, ephemeral: true });
+          return interaction.reply({ content: `⚠️ This ticket is already claimed by <@${ticket.claimedBy}>.`, ephemeral: true });
         }
 
         ticketService.claimTicket(interaction.guild.id, interaction.channel.id, interaction.user.id);
 
-        // Update the open message to disable claim button
         if (ticket.openMessageId) {
           try {
             const msg = await interaction.channel.messages.fetch(ticket.openMessageId);
             const updatedRow = new ActionRowBuilder().addComponents(
-              new ButtonBuilder().setCustomId('ticket:close').setLabel('🔒 Fermer le ticket').setStyle(ButtonStyle.Danger),
-              new ButtonBuilder().setCustomId('ticket:claim').setLabel(`✋ Pris par ${interaction.user.username}`).setStyle(ButtonStyle.Secondary).setDisabled(true)
+              new ButtonBuilder().setCustomId('ticket:close').setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger),
+              new ButtonBuilder().setCustomId('ticket:claim').setLabel(`✋ Claimed by ${interaction.user.username}`).setStyle(ButtonStyle.Secondary).setDisabled(true)
             );
             await msg.edit({ components: [updatedRow] });
           } catch (_) {}
@@ -201,7 +203,7 @@ module.exports = {
         return interaction.reply({
           embeds: [new EmbedBuilder()
             .setColor(0x2ecc71)
-            .setDescription(`✅ ${interaction.user} a pris en charge ce ticket.`)
+            .setDescription(`✅ ${interaction.user} has claimed this ticket.`)
             .setFooter({ text: 'Ardavia Council • Tickets' })
             .setTimestamp()
           ]
@@ -209,7 +211,7 @@ module.exports = {
       }
     }
 
-    // ── Help navigation buttons ──────────────────────────────────────────────
+    // ── Help navigation ──────────────────────────────────────────────────────
     if (action === 'help') {
       const page = PAGES[target] ? PAGES[target]() : PAGES.menu();
       return interaction.update({ embeds: [page.embed], components: [page.row] });

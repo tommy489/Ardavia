@@ -21,8 +21,8 @@ const format = (template, member) =>
 const buildEmbed = (member, cfg) => {
   const embed = new EmbedBuilder()
     .setColor(cfg.color || 0x2ecc71)
-    .setTitle(format(cfg.title || 'Bienvenue sur {server} !', member))
-    .setDescription(format(cfg.description || 'Bienvenue {user} ! Tu es le membre n°**{memberCount}**.', member))
+    .setTitle(format(cfg.title || 'Welcome to {server}!', member))
+    .setDescription(format(cfg.description || 'Welcome {user}! You are member #**{memberCount}**.', member))
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
     .setFooter({ text: 'Ardavia Council' })
     .setTimestamp();

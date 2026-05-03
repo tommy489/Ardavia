@@ -7,13 +7,13 @@ const FOOTER = 'Ardavia Council • Tickets';
 function buildPanelEmbed() {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle('🎫  ARDAVIA COUNCIL — Centre de Tickets')
+    .setTitle('🎫  ARDAVIA COUNCIL — Ticket Centre')
     .setDescription(
-      'Besoin d\'aide ou de contacter le staff ?\n' +
-      'Sélectionnez la catégorie correspondant à votre demande.\n\n' +
-      '🆘 **Support** — Questions générales, aide technique\n' +
-      '🚨 **Signalement** — Signaler un comportement inapproprié\n' +
-      '🏛️ **Gouvernement** — Demandes officielles au Parlement'
+      'Need help or want to contact staff?\n' +
+      'Select the category that matches your request.\n\n' +
+      '🆘 **Support** — General questions, technical help\n' +
+      '🚨 **Report** — Report inappropriate behaviour\n' +
+      '🏛️ **Government** — Official requests to Parliament'
     )
     .setFooter({ text: FOOTER })
     .setTimestamp();
@@ -22,47 +22,43 @@ function buildPanelEmbed() {
 function buildPanelRow() {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('ticket:create:support').setLabel('🆘 Support').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('ticket:create:report').setLabel('🚨 Signalement').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('ticket:create:government').setLabel('🏛️ Gouvernement').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId('ticket:create:report').setLabel('🚨 Report').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('ticket:create:government').setLabel('🏛️ Government').setStyle(ButtonStyle.Success)
   );
 }
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ticket')
-    .setDescription('Système de tickets du staff Ardavia')
+    .setDescription('Ardavia staff ticket system')
 
     .addSubcommand(sub => sub
       .setName('setup')
-      .setDescription('Configure le système de tickets (rôle staff + logs)')
-      .addRoleOption(o => o.setName('staff').setDescription('Rôle du staff').setRequired(true))
+      .setDescription('Configure the ticket system (staff role + logs)')
+      .addRoleOption(o => o.setName('staff').setDescription('Staff role').setRequired(true))
       .addChannelOption(o => o
         .setName('logs')
-        .setDescription('Salon de logs des tickets fermés (optionnel)')
+        .setDescription('Log channel for closed tickets (optional)')
         .addChannelTypes(ChannelType.GuildText)
       )
     )
-
     .addSubcommand(sub => sub
       .setName('panel')
-      .setDescription('Publie le panneau de création de tickets dans ce salon')
+      .setDescription('Post the ticket panel in this channel')
     )
-
     .addSubcommand(sub => sub
       .setName('close')
-      .setDescription('Ferme le ticket dans ce salon')
+      .setDescription('Close the ticket in this channel')
     )
-
     .addSubcommand(sub => sub
       .setName('add-user')
-      .setDescription('Ajoute un utilisateur au ticket actif')
-      .addUserOption(o => o.setName('user').setDescription('Utilisateur à ajouter').setRequired(true))
+      .setDescription('Add a user to the active ticket')
+      .addUserOption(o => o.setName('user').setDescription('User to add').setRequired(true))
     )
-
     .addSubcommand(sub => sub
       .setName('remove-user')
-      .setDescription('Retire un utilisateur du ticket actif')
-      .addUserOption(o => o.setName('user').setDescription('Utilisateur à retirer').setRequired(true))
+      .setDescription('Remove a user from the active ticket')
+      .addUserOption(o => o.setName('user').setDescription('User to remove').setRequired(true))
     ),
 
   async execute(interaction) {
@@ -72,22 +68,22 @@ module.exports = {
     // ── Setup ────────────────────────────────────────────────────────────────
     if (sub === 'setup') {
       if (!member.permissions.has('ManageChannels')) {
-        return interaction.reply({ content: '⛔ Permission requise : **Gérer les salons**.', ephemeral: true });
+        return interaction.reply({ content: '⛔ Permission required: **Manage Channels**.', ephemeral: true });
       }
 
-      const staffRole   = interaction.options.getRole('staff');
-      const logChannel  = interaction.options.getChannel('logs');
+      const staffRole  = interaction.options.getRole('staff');
+      const logChannel = interaction.options.getChannel('logs');
 
       ticketService.setPanel(guild.id, channel.id, null, staffRole.id, logChannel?.id ?? null);
 
       const embed = new EmbedBuilder()
         .setColor(COLOR)
-        .setTitle('🎫  Système de Tickets configuré')
+        .setTitle('🎫  Ticket System Configured')
         .addFields(
-          { name: '👮 Rôle Staff', value: staffRole.toString(),                                      inline: true },
-          { name: '📋 Logs',       value: logChannel ? logChannel.toString() : 'Non configuré',       inline: true }
+          { name: '👮 Staff Role', value: staffRole.toString(),                                      inline: true },
+          { name: '📋 Logs',       value: logChannel ? logChannel.toString() : 'Not configured',     inline: true }
         )
-        .setDescription('Utilisez `/ticket panel` pour publier le panneau dans le salon de votre choix.')
+        .setDescription('Use `/ticket panel` to publish the panel in your desired channel.')
         .setFooter({ text: FOOTER })
         .setTimestamp();
 
@@ -97,12 +93,12 @@ module.exports = {
     // ── Panel ─────────────────────────────────────────────────────────────────
     if (sub === 'panel') {
       if (!member.permissions.has('ManageChannels')) {
-        return interaction.reply({ content: '⛔ Permission requise : **Gérer les salons**.', ephemeral: true });
+        return interaction.reply({ content: '⛔ Permission required: **Manage Channels**.', ephemeral: true });
       }
 
       const panel = ticketService.getPanel(guild.id);
       if (!panel) {
-        return interaction.reply({ content: '⚠️ Système de tickets non configuré. Utilisez `/ticket setup` d\'abord.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ Ticket system not configured. Use `/ticket setup` first.', ephemeral: true });
       }
 
       const msg = await interaction.reply({
@@ -119,7 +115,7 @@ module.exports = {
     if (sub === 'close') {
       const ticket = ticketService.getByChannel(guild.id, channel.id);
       if (!ticket || ticket.status === 'closed') {
-        return interaction.reply({ content: '⚠️ Ce salon n\'est pas un ticket actif.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ This channel is not an active ticket.', ephemeral: true });
       }
 
       ticketService.closeTicket(guild.id, channel.id);
@@ -133,12 +129,12 @@ module.exports = {
           await logCh.send({
             embeds: [new EmbedBuilder()
               .setColor(0x95a5a6)
-              .setTitle('🎫  Ticket Clôturé')
+              .setTitle('🎫  Ticket Closed')
               .addFields(
-                { name: '📂 Catégorie',  value: meta.label,             inline: true },
-                { name: '👤 Ouvert par', value: `<@${ticket.userId}>`,  inline: true },
-                { name: '🔒 Fermé par',  value: interaction.user.toString(), inline: true },
-                { name: '🕐 Créé le',    value: `<t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:f>`, inline: false }
+                { name: '📂 Category',   value: meta.label,                      inline: true },
+                { name: '👤 Opened by',  value: `<@${ticket.userId}>`,            inline: true },
+                { name: '🔒 Closed by',  value: interaction.user.toString(),       inline: true },
+                { name: '🕐 Created',    value: `<t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:f>`, inline: false }
               )
               .setFooter({ text: FOOTER })
               .setTimestamp()
@@ -150,8 +146,8 @@ module.exports = {
       await interaction.reply({
         embeds: [new EmbedBuilder()
           .setColor(0xe74c3c)
-          .setTitle('🔒  Ticket Fermé')
-          .setDescription(`Ce ticket a été fermé par ${interaction.user}.\nLe salon sera supprimé dans **5 secondes**.`)
+          .setTitle('🔒  Ticket Closed')
+          .setDescription(`This ticket was closed by ${interaction.user}.\nThe channel will be deleted in **5 seconds**.`)
           .setFooter({ text: FOOTER })
           .setTimestamp()
         ]
@@ -165,20 +161,18 @@ module.exports = {
     if (sub === 'add-user') {
       const ticket = ticketService.getByChannel(guild.id, channel.id);
       if (!ticket || ticket.status === 'closed') {
-        return interaction.reply({ content: '⚠️ Ce salon n\'est pas un ticket actif.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ This channel is not an active ticket.', ephemeral: true });
       }
 
       const target = interaction.options.getUser('user');
       await channel.permissionOverwrites.create(target, {
-        ViewChannel: true,
-        SendMessages: true,
-        ReadMessageHistory: true
+        ViewChannel: true, SendMessages: true, ReadMessageHistory: true
       });
 
       return interaction.reply({
         embeds: [new EmbedBuilder()
           .setColor(COLOR)
-          .setDescription(`✅ ${target} a été **ajouté** à ce ticket.`)
+          .setDescription(`✅ ${target} has been **added** to this ticket.`)
           .setFooter({ text: FOOTER })
           .setTimestamp()
         ]
@@ -189,12 +183,12 @@ module.exports = {
     if (sub === 'remove-user') {
       const ticket = ticketService.getByChannel(guild.id, channel.id);
       if (!ticket || ticket.status === 'closed') {
-        return interaction.reply({ content: '⚠️ Ce salon n\'est pas un ticket actif.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ This channel is not an active ticket.', ephemeral: true });
       }
 
       const target = interaction.options.getUser('user');
       if (target.id === ticket.userId) {
-        return interaction.reply({ content: '⚠️ Impossible de retirer le créateur du ticket.', ephemeral: true });
+        return interaction.reply({ content: '⚠️ Cannot remove the ticket creator.', ephemeral: true });
       }
 
       await channel.permissionOverwrites.delete(target).catch(() => {});
@@ -202,7 +196,7 @@ module.exports = {
       return interaction.reply({
         embeds: [new EmbedBuilder()
           .setColor(COLOR)
-          .setDescription(`✅ ${target} a été **retiré** de ce ticket.`)
+          .setDescription(`✅ ${target} has been **removed** from this ticket.`)
           .setFooter({ text: FOOTER })
           .setTimestamp()
         ]

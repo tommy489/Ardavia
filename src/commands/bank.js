@@ -5,48 +5,56 @@ const economyService = require('../services/economyService');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('bank')
-    .setDescription('Gestion bancaire immersive')
-    .addSubcommand(sub => sub.setName('create-account').setDescription('Ouvre un compte bancaire RP'))
+    .setDescription('RP banking system')
+    .addSubcommand(sub => sub.setName('create-account').setDescription('Open an RP bank account'))
     .addSubcommand(sub => sub
       .setName('deposit')
-      .setDescription('Dépose des fonds à la banque')
-      .addIntegerOption(option => option.setName('amount').setDescription('Montant').setRequired(true)))
+      .setDescription('Deposit funds into your bank account')
+      .addIntegerOption(o => o.setName('amount').setDescription('Amount').setRequired(true)))
     .addSubcommand(sub => sub
       .setName('withdraw')
-      .setDescription('Retire des fonds de votre compte bancaire')
-      .addIntegerOption(option => option.setName('amount').setDescription('Montant').setRequired(true)))
-    .addSubcommand(sub => sub.setName('account').setDescription('Voir le détail de votre compte bancaire')),
+      .setDescription('Withdraw funds from your bank account')
+      .addIntegerOption(o => o.setName('amount').setDescription('Amount').setRequired(true)))
+    .addSubcommand(sub => sub.setName('account').setDescription('View your bank account details')),
+
   async execute(interaction) {
-    const sub = interaction.options.getSubcommand();
-    const guildId = interaction.guild.id;
-    const currency = economyService.getCurrencyName(guildId) || 'Crédits';
+    const sub      = interaction.options.getSubcommand();
+    const guildId  = interaction.guild.id;
+    const currency = economyService.getCurrencyName(guildId) || 'Credits';
 
     if (sub === 'create-account') {
       economyService.createBankAccount(guildId, interaction.user.id);
-      return interaction.reply({ embeds: [createEmbed({ title: 'Banque', description: 'Votre compte bancaire a été créé. Vous pouvez maintenant déposer des fonds.', color: 0x1abc9c })] });
+      return interaction.reply({ embeds: [createEmbed({ title: 'Bank', description: 'Your bank account has been created. You can now deposit funds.', color: 0x1abc9c })] });
     }
 
     if (sub === 'deposit') {
       const amount = interaction.options.getInteger('amount');
       if (!economyService.deposit(guildId, interaction.user.id, amount)) {
-        return interaction.reply({ content: 'Dépôt impossible : fonds insuffisants ou compte inexistant.', ephemeral: true });
+        return interaction.reply({ content: 'Deposit failed: insufficient funds or no account found.', ephemeral: true });
       }
-      return interaction.reply({ embeds: [createEmbed({ title: 'Banque', description: `${amount} ${currency} déposés sur votre compte.`, color: 0x3498db })] });
+      return interaction.reply({ embeds: [createEmbed({ title: 'Bank', description: `${amount} ${currency} deposited into your account.`, color: 0x3498db })] });
     }
 
     if (sub === 'withdraw') {
       const amount = interaction.options.getInteger('amount');
       if (!economyService.withdraw(guildId, interaction.user.id, amount)) {
-        return interaction.reply({ content: 'Retrait impossible : fonds insuffisants ou compte inexistant.', ephemeral: true });
+        return interaction.reply({ content: 'Withdrawal failed: insufficient funds or no account found.', ephemeral: true });
       }
-      return interaction.reply({ embeds: [createEmbed({ title: 'Banque', description: `${amount} ${currency} retirés de votre compte.`, color: 0x3498db })] });
+      return interaction.reply({ embeds: [createEmbed({ title: 'Bank', description: `${amount} ${currency} withdrawn from your account.`, color: 0x3498db })] });
     }
 
     const account = economyService.getBankAccount(guildId, interaction.user.id);
     if (!account) {
-      return interaction.reply({ content: 'Aucun compte bancaire trouvé. Utilisez /bank create-account.', ephemeral: true });
+      return interaction.reply({ content: 'No bank account found. Use `/bank create-account` first.', ephemeral: true });
     }
-    const history = economyService.getTransactionHistory(guildId, interaction.user.id).map(item => `• ${item.type} : ${item.amount} (${new Date(item.createdAt).toLocaleDateString()})`).join('\n') || 'Aucune transaction récente.';
-    return interaction.reply({ embeds: [createEmbed({ title: 'Détails du compte bancaire', description: `Solde : **${account.balance} ${currency}**\nOuvert le : <t:${Math.floor(new Date(account.createdAt).getTime() / 1000)}:d>`, fields: [{ name: 'Historique', value: history }] })] });
+    const history = economyService.getTransactionHistory(guildId, interaction.user.id)
+      .map(t => `• ${t.type}: ${t.amount} ${currency} (<t:${Math.floor(new Date(t.createdAt).getTime() / 1000)}:d>)`)
+      .join('\n') || 'No recent transactions.';
+
+    return interaction.reply({ embeds: [createEmbed({
+      title: 'Bank Account',
+      description: `Balance: **${account.balance} ${currency}**\nOpened: <t:${Math.floor(new Date(account.createdAt).getTime() / 1000)}:d>`,
+      fields: [{ name: 'Transaction History', value: history }]
+    })] });
   }
 };

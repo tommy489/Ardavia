@@ -1,9 +1,9 @@
 const db = require('./db');
 
 const CATEGORIES = {
-  support:    { label: '🆘 Support',        color: 0x3498db },
-  report:     { label: '🚨 Signalement',    color: 0xe74c3c },
-  government: { label: '🏛️ Gouvernement',  color: 0xf1c40f }
+  support:    { label: '🆘 Support',    color: 0x3498db },
+  report:     { label: '🚨 Report',     color: 0xe74c3c },
+  government: { label: '🏛️ Government', color: 0xf1c40f }
 };
 
 const getCategoryMeta = (cat) => CATEGORIES[cat] || CATEGORIES.support;
