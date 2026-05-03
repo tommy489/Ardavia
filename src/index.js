@@ -5,12 +5,10 @@ const { token, clientId, guildId } = require('./config');
 const db = require('./services/db');
 const logger = require('./services/logger');
 
-// GuildMembers is a privileged intent — enable it in Discord Developer Portal → Bot → Privileged Gateway Intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMessages
   ],
   partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
 });
